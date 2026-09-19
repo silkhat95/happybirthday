@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Happy Birthday</title>
+  <title>Happy Birthday!</title>
   <style>
+    body {
+      min-height: 300vh;
+      margin: 0;
+      text-align: center;
+    }
+
     h1 {
       display: inline-block;
       background: linear-gradient(25deg,
@@ -14,9 +20,160 @@
       background-clip: text;
       color: transparent;
     }
+
+    .scroll-message {
+      display: inline-block;
+      color: skyblue;
+      animation: float-message 2.5s ease-in-out infinite;
+    }
+
+    @keyframes float-message {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .final-message {
+      display: flex;
+      width: 100vw;
+      min-height: 100vh;
+      margin-top: 200vh;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .final-message h2 {
+      display: flex;
+      width: 100%;
+      margin: 0;
+      justify-content: center;
+      font-size: clamp(2rem, 7vw, 8rem);
+      line-height: 1;
+      text-align: center;
+    }
+
+    .final-letter {
+      display: inline-block;
+      background: linear-gradient(180deg,
+        hsl(var(--hue), 100%, 55%),
+        hsl(calc(var(--hue) + 45), 100%, 55%));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      opacity: 0;
+      transform: translateY(40px) scale(.8);
+      transition: opacity 250ms ease, transform 250ms ease;
+    }
+
+    .final-letter.is-visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .birthday-image {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 100vw;
+      max-width: 100vw;
+      height: auto;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+    }
+
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 14px;
+      pointer-events: none;
+      z-index: 10;
+      animation: confetti-fall 900ms cubic-bezier(.2, .7, .3, 1) forwards;
+    }
+
+    @keyframes confetti-fall {
+      0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--drift), var(--fall)) rotate(var(--spin));
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Happy Birthday!</h1>
+  <h1>Happy Birthday!</h1><br>
+  <span class="scroll-message">↓Scroll down!↓</span>
+  <img class="birthday-image" src="image1.svg" alt="">
+  <section class="final-message">
+    <h2 id="final-message-title" aria-label="Happy BirthDay!"></h2>
+  </section>
+
+  <script>
+    const confettiColors = ['#ff4d6d', '#ffbe0b', '#3a86ff', '#06d6a0', '#8338ec', '#fb5607'];
+    const birthdayImage = document.querySelector('.birthday-image');
+    const finalMessage = document.querySelector('.final-message');
+    const finalMessageTitle = document.querySelector('#final-message-title');
+    const finalText = 'Happy BirthDay!';
+
+    [...finalText].forEach((character, index) => {
+      const letter = document.createElement('span');
+      letter.className = 'final-letter';
+      letter.textContent = character === ' ' ? '\u00a0' : character;
+      letter.style.setProperty('--hue', `${index * 25}`);
+      finalMessageTitle.appendChild(letter);
+    });
+
+    const updateFinalMessage = () => {
+      const sectionTop = finalMessage.offsetTop;
+      const sectionHeight = finalMessage.offsetHeight;
+      const progress = Math.min(Math.max((window.scrollY - sectionTop + window.innerHeight) / sectionHeight, 0), 1);
+      const visibleLetters = Math.ceil(progress * finalText.length);
+
+      finalMessageTitle.querySelectorAll('.final-letter').forEach((letter, index) => {
+        letter.classList.toggle('is-visible', index < visibleLetters);
+      });
+    };
+
+    const updateImageVisibility = () => {
+      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollProgress = scrollableHeight > 0 ? window.scrollY / scrollableHeight : 0;
+      birthdayImage.style.opacity = Math.min(scrollProgress, 1);
+    };
+
+    window.addEventListener('scroll', updateImageVisibility, { passive: true });
+    window.addEventListener('scroll', updateFinalMessage, { passive: true });
+    updateImageVisibility();
+    updateFinalMessage();
+
+    document.addEventListener('pointerdown', (event) => {
+      const amount = 28;
+
+      for (let index = 0; index < amount; index += 1) {
+        const piece = document.createElement('span');
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 80 + Math.random() * 150;
+
+        piece.className = 'confetti';
+        piece.style.left = `${event.clientX}px`;
+        piece.style.top = `${event.clientY}px`;
+        piece.style.backgroundColor = confettiColors[index % confettiColors.length];
+        piece.style.setProperty('--drift', `${Math.cos(angle) * distance}px`);
+        piece.style.setProperty('--fall', `${Math.sin(angle) * distance + 130}px`);
+        piece.style.setProperty('--spin', `${180 + Math.random() * 540}deg`);
+        piece.style.animationDelay = `${Math.random() * 500}ms`;
+        document.body.appendChild(piece);
+
+        piece.addEventListener('animationend', () => piece.remove(), { once: true });
+      }
+    });
+  </script>
 </body>
 </html>
